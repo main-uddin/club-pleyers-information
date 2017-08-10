@@ -1,31 +1,52 @@
 import React, { Component } from 'react'
 
+const { fetch } = window
+
 class Football extends Component {
   constructor (props) {
     super(props)
     this.state = {
-      players: []
+      teams: [],
+      players: '',
+      link: ''
     }
   }
   render () {
     return (
       <div>
-        <pre>
-          {this.state.players}
-        </pre>
+        <select onChange={e => this.setState({ link: e.target.value })}>
+          {this.state.teams.map((el, idx) => (
+            <option key={idx} value={el.link}>{el.name}</option>
+          ))}
+        </select>
+        <button onClick={this.getPlayers.bind(this)}>Show Players</button>
+        <pre>{this.state.players}</pre>
       </div>
     )
   }
+
+  getPlayers () {
+    fetch(`http://cors-anywhere.herokuapp.com/${this.state.link}`)
+      .then(r => r.json())
+      .then(team =>
+        this.setState({ players: JSON.stringify(team.players, null, 2) })
+      )
+  }
+
   componentDidMount () {
-    window.fetch('https://cors-anywhere.herokuapp.com/http://api.football-data.org/v1/teams/65/players')
-            .then(data => data.json())
-            .then(meta => {
-              const playerArr = meta.players
-              const newPlayerArr = JSON.stringify(playerArr, null, 2)
-              this.setState({
-                players: newPlayerArr
-              })
-            })
+    fetch(
+      'https://cors-anywhere.herokuapp.com/' +
+        'https://api.football-data.org/v1/competitions/398/teams'
+    )
+      .then(r => r.json())
+      .then(r => r.teams)
+      .then(teams =>
+        teams.map(el => ({
+          name: el.name,
+          link: el._links.players.href
+        }))
+      )
+      .then(teams => this.setState({ teams }))
   }
 }
 
